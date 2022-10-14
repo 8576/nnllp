@@ -49,9 +49,6 @@ if __name__ == '__main__':
     testset = Createds(data_file="testset.csv", config=config)
     test_iter = DataLoader(testset, batch_size=config.batch_size)
 
-    # train_iter = build_iterator(train_data, config)
-    # dev_iter = build_iterator(dev_data, config)
-    # test_iter = build_iterator(test_data, config)
     time_dif = get_time_dif(start_time)
     print("Time usage:", time_dif)
 

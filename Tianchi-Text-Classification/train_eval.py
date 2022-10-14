@@ -8,7 +8,12 @@ import time
 import tqdm
 from utils import get_time_dif
 from tensorboardX import SummaryWriter
+import logging
+import logging.config
 
+logging.config.fileConfig("logconfig.ini")
+
+log = logging.getLogger("info")
 
 # 权重初始化，默认xavier
 def init_network(model, method='xavier', exclude='embedding', seed=123):
@@ -41,16 +46,16 @@ def train(config, model, train_iter, dev_iter, test_iter):
     writer = SummaryWriter(log_dir=config.log_path + '/' + time.strftime('%m-%d_%H.%M', time.localtime()))
     for epoch in range(config.num_epochs):
         print('Epoch [{}/{}]'.format(epoch + 1, config.num_epochs))
+        log.info("Epoch [{}/{}]".format(epoch + 1, config.num_epochs))
         # scheduler.step() # 学习率衰减
         for trains, labels in tqdm.tqdm(train_iter):
-            # trains, labels = tdata
             outputs = model(trains)
-            
             model.zero_grad()
             loss = F.cross_entropy(outputs, labels)
             loss.backward()
             optimizer.step()
-            if total_batch % 2 == 0:
+            log.info("global steps {}, loss {}".format(total_batch, loss))
+            if (total_batch + 1) % 200 == 0:
                 # 每多少轮输出在训练集和验证集上的效果
                 true = labels.data.cpu()
                 predic = torch.max(outputs.data, 1)[1].cpu()
@@ -66,6 +71,7 @@ def train(config, model, train_iter, dev_iter, test_iter):
                 time_dif = get_time_dif(start_time)
                 msg = 'Iter: {0:>6},  Train Loss: {1:>5.2},  Train Acc: {2:>6.2%},  Val Loss: {3:>5.2},  Val Acc: {4:>6.2%},  Time: {5} {6}'
                 print(msg.format(total_batch, loss.item(), train_acc, dev_loss, dev_acc, time_dif, improve))
+                log.info(msg.format(total_batch, loss.item(), train_acc, dev_loss, dev_acc, time_dif, improve))
                 writer.add_scalar("loss/train", loss.item(), total_batch)
                 writer.add_scalar("loss/dev", dev_loss, total_batch)
                 writer.add_scalar("acc/train", train_acc, total_batch)
